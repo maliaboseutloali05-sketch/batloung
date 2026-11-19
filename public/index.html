@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Batloung Farm | Distribution Desk</title>
+<style>
+  :root{
+    --soil:#2b2118; --leaf:#2f6b3a; --leaf-soft:#e3efdf; --mango:#e8892b; --berry:#a3324a;
+    --paper:#faf6ee; --card:#ffffff; --line:#e4dccb; --ink:#241d16; --muted:#7a6e5f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 "Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink)}
+  header{background:var(--soil);color:#f6ecd9;padding:18px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  header h1{margin:0;font:700 22px Georgia,serif;letter-spacing:.3px}
+  header h1 span{color:var(--mango)}
+  .tools{display:flex;gap:10px;align-items:center;font-size:13px}
+  .tools input{padding:6px 8px;border-radius:6px;border:1px solid #5b4b3a;background:#3a2d22;color:#fff;width:150px}
+  .pill{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
+  .ok{background:var(--leaf-soft);color:var(--leaf)} .bad{background:#f7dde2;color:var(--berry)}
+  main{max-width:1150px;margin:0 auto;padding:22px;display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+  section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  section.wide{grid-column:1/-1}
+  h2{margin:0 0 12px;font:700 16px Georgia,serif}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)} th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .sizes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+  .fruit{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .fruit b{font-family:Georgia,serif}
+  .row{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px}
+  .row .lbl{width:60px;color:var(--muted)} .bar{flex:1;height:8px;background:#efe8d8;border-radius:5px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--leaf)} .low .bar i{background:var(--mango)} .low .q{color:var(--berry);font-weight:700}
+  .q{width:36px;text-align:right}
+  form{display:grid;gap:8px} label{font-size:12px;color:var(--muted);font-weight:600}
+  select,input[type=number],input[type=text]{padding:7px 8px;border:1px solid var(--line);border-radius:6px;font:inherit;width:100%}
+  .line{display:grid;grid-template-columns:1.4fr 1fr .8fr auto;gap:6px}
+  button{padding:8px 12px;border:0;border-radius:7px;background:var(--leaf);color:#fff;font-weight:600;cursor:pointer}
+  button.ghost{background:var(--leaf-soft);color:var(--leaf)}
+  .msg{padding:9px 11px;border-radius:8px;font-size:13px;white-space:pre-wrap;display:none}
+  .msg.ok{display:block}.msg.bad{display:block}
+  ul.lines{margin:0;padding-left:18px;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Batloung <span>Farm</span> &middot; Distribution Desk</h1>
+  <div class="tools">
+    <span id="health" class="pill bad">checking&hellip;</span>
+    <input id="apikey" type="password" placeholder="Admin key (if set)">
+  </div>
+</header>
+
+<main>
+  <section class="wide">
+    <h2>Stock by packaging size <small style="font-weight:400;color:var(--muted)">&mdash; orange = at or below reorder level</small></h2>
+    <div id="stock" class="sizes"></div>
+  </section>
+
+  <section>
+    <h2>Record a sale</h2>
+    <form id="saleForm">
+      <div><label>Vendor</label><select id="vendor"></select></div>
+      <label>Items (price is set by the server from the price list)</label>
+      <div class="line">
+        <select id="fruit"></select>
+        <select id="size"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select>
+        <input id="qty" type="number" min="1" value="1">
+        <button type="button" class="ghost" id="addLine">Add</button>
+      </div>
+      <ul id="lines" class="lines"></ul>
+      <div><label>Payment</label>
+        <select id="method"><option>CASH</option><option>MOBILE_MONEY</option><option>CREDIT</option></select></div>
+      <div><label>Amount paid now (blank = pay in full; ignored for CREDIT)</label><input id="paid" type="text" placeholder="e.g. 500.00"></div>
+      <button type="submit">Record sale</button>
+      <div id="saleMsg" class="msg"></div>
+    </form>
+  </section>
+
+  <section>
+    <h2>Who owes us money</h2>
+    <table><thead><tr><th>Vendor</th><th class="n">Billed</th><th class="n">Owes</th></tr></thead><tbody id="owing"></tbody></table>
+    <p id="owingTotal" style="margin:10px 0 0;font-weight:700"></p>
+  </section>
+
+  <section>
+    <h2>Top 5 fruits sold</h2>
+    <table><thead><tr><th>Fruit</th><th class="n">Boxes</th><th class="n">Revenue</th></tr></thead><tbody id="top"></tbody></table>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const money = (n) => 'M ' + Number(n).toLocaleString('en', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+const keyBox = $('apikey'); keyBox.value = localStorage.getItem('adminKey') || '';
+keyBox.addEventListener('change', () => { localStorage.setItem('adminKey', keyBox.value); load(); });
+
+async function api(path, options = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (keyBox.value) headers['x-api-key'] = keyBox.value;
+  const res = await fetch(path, { ...options, headers });
+  const json = await res.json().catch(() => ({}));
+  return { status: res.status, json };
+}
+
+function renderStock(rows) {
+  const grid = $('stock'); grid.replaceChildren();
+  const byFruit = {};
+  rows.forEach((r) => (byFruit[r.fruit_name] ||= []).push(r));
+  const max = Math.max(1, ...rows.map((r) => r.available_quantity));
+  Object.entries(byFruit).forEach(([name, sizes]) => {
+    const card = el('div', undefined, 'fruit'); card.append(el('b', name));
+    sizes.forEach((s) => {
+      const row = el('div', undefined, 'row' + (s.is_low_stock ? ' low' : ''));
+      const bar = el('div', undefined, 'bar'); const fill = el('i'); fill.style.width = (s.available_quantity / max * 100) + '%'; bar.append(fill);
+      row.append(el('span', s.packaging_size.toLowerCase(), 'lbl'), bar, el('span', s.available_quantity, 'q'));
+      card.append(row);
+    });
+    grid.append(card);
+  });
+}
+
+function fillRows(tbody, rows, cells) {
+  tbody.replaceChildren();
+  if (!rows.length) { const tr = el('tr'); const td = el('td', 'Nothing to show'); td.colSpan = 3; tr.append(td); tbody.append(tr); return; }
+  rows.forEach((r) => { const tr = el('tr'); cells(r).forEach(([t, n]) => tr.append(el('td', t, n ? 'n' : ''))); tbody.append(tr); });
+}
+
+async function load() {
+  const health = await fetch('/api/health').then((r) => r.json()).catch(() => ({ success: false }));
+  $('health').textContent = health.success ? 'database connected' : 'database unreachable';
+  $('health').className = 'pill ' + (health.success ? 'ok' : 'bad');
+
+  const [stock, owing, top, vendors, fruits] = await Promise.all([
+    api('/api/stock'), api('/api/vendors/balances?owing=true'), api('/api/reports/top-fruits'),
+    api('/api/vendors'), api('/api/fruits'),
+  ]);
+  if (stock.status === 401) { $('stock').textContent = 'Enter the admin key (top right) to load data.'; return; }
+  if (stock.json.data) renderStock(stock.json.data);
+  if (owing.json.data) {
+    fillRows($('owing'), owing.json.data, (v) => [[v.vendor_name], [money(v.total_billed), 1], [money(v.outstanding_balance), 1]]);
+    $('owingTotal').textContent = 'Total outstanding: ' + money(owing.json.total_outstanding);
+  }
+  if (top.json.data) fillRows($('top'), top.json.data, (f) => [[f.fruit_name], [f.boxes_sold, 1], [money(f.revenue), 1]]);
+  if (vendors.json.data) { $('vendor').replaceChildren(...vendors.json.data.map((v) => { const o = el('option', v.vendor_name); o.value = v.vendor_id; return o; })); }
+  if (fruits.json.data) { $('fruit').replaceChildren(...fruits.json.data.map((f) => { const o = el('option', f.fruit_name); o.value = f.fruit_id; return o; })); }
+}
+
+const lines = [];
+function drawLines() {
+  $('lines').replaceChildren(...lines.map((l, i) => {
+    const li = el('li', `${l.quantity} x ${l.fruitName} (${l.packaging_size}) `);
+    const rm = el('a', 'remove'); rm.href = '#'; rm.onclick = (e) => { e.preventDefault(); lines.splice(i, 1); drawLines(); };
+    li.append(rm); return li;
+  }));
+}
+$('addLine').onclick = () => {
+  const qty = parseInt($('qty').value, 10);
+  if (!qty || qty < 1) return;
+  lines.push({ fruit_id: +$('fruit').value, fruitName: $('fruit').selectedOptions[0].textContent, packaging_size: $('size').value, quantity: qty });
+  drawLines();
+};
+
+$('saleForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = $('saleMsg');
+  const body = { vendor_id: +$('vendor').value, payment_method: $('method').value,
+    items: lines.map(({ fruit_id, packaging_size, quantity }) => ({ fruit_id, packaging_size, quantity })) };
+  if ($('paid').value.trim() && body.payment_method !== 'CREDIT') body.amount_paid = $('paid').value.trim();
+  const { status, json } = await api('/api/sales', { method: 'POST', body: JSON.stringify(body) });
+  if (status === 201) {
+    msg.className = 'msg ok';
+    msg.textContent = `Sale #${json.data.sale_id} saved - total ${money(json.data.total_amount)}, ${json.data.payment_status}, balance ${money(json.data.balance_due)}`;
+    lines.length = 0; drawLines(); load();
+  } else {
+    msg.className = 'msg bad';
+    const detail = (json.error && json.error.details && json.error.details.shortages)
+      ? '\n' + json.error.details.shortages.map((s) => `- ${s.fruit_name} ${s.packaging_size}: asked ${s.requested}, only ${s.available} in stock`).join('\n') : '';
+    msg.textContent = `HTTP ${status}: ${(json.error && json.error.message) || 'Request failed'}${detail}`;
+  }
+});
+
+load();
+</script>
+</body>
+</html>

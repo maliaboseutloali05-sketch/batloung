@@ -1,0 +1,268 @@
+# Batloung Farm API - request collection
+# Works with the VS Code "REST Client" extension (click "Send Request" above each block).
+# Change @host to your live link before recording the video.
+
+@host = http://localhost:3000
+@key =
+
+### Health
+GET {{host}}/api/health
+
+# =================== SUPPLIERS ===================
+### Register supplier  (201)
+POST {{host}}/api/suppliers
+Content-Type: application/json
+x-api-key: {{key}}
+
+{
+  "business_name": "Karoo Peach & Apple Farm",
+  "contact_person": "Pieter Joubert",
+  "phone": "+27 44 555 0177",
+  "province": "Western Cape",
+  "address": "Farm 9, Route 62, Oudtshoorn"
+}
+
+### All suppliers (optional ?province=Gauteng&search=fresh)
+GET {{host}}/api/suppliers
+x-api-key: {{key}}
+
+### One supplier  (200, or 404 for 999)
+GET {{host}}/api/suppliers/1
+x-api-key: {{key}}
+
+### Update supplier
+PUT {{host}}/api/suppliers/1
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "contact_person": "Johan van Wyk Jr", "phone": "+27115550199" }
+
+### Delete supplier with purchase history -> 409 (business constraint)
+DELETE {{host}}/api/suppliers/1
+x-api-key: {{key}}
+
+### Invalid supplier -> 400 with a field-by-field list
+POST {{host}}/api/suppliers
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "business_name": "X", "phone": "12", "province": "Narnia" }
+
+# =================== FRUITS, PRICES, STOCK ===================
+### Register new fruit (also opens SMALL/MEDIUM/LARGE stock rows)
+POST {{host}}/api/fruits
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "fruit_name": "Pears", "description": "Packham pears" }
+
+### Available fruits (default ACTIVE; ?status=ALL shows discontinued too)
+GET {{host}}/api/fruits
+x-api-key: {{key}}
+
+### Update fruit
+PUT {{host}}/api/fruits/6
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "description": "Packham and Forelle pears" }
+
+### Selling price list
+GET {{host}}/api/prices
+x-api-key: {{key}}
+
+### Set a price (each size of a fruit must differ -> 400 if you reuse another size's price)
+PUT {{host}}/api/prices
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "fruit_id": 6, "packaging_size": "SMALL", "unit_price": 110 }
+
+### Stock - every fruit x size
+GET {{host}}/api/stock
+x-api-key: {{key}}
+
+### Stock - one fruit, split by packaging size
+GET {{host}}/api/stock/fruit/1
+x-api-key: {{key}}
+
+### Low stock (uses each row's reorder level)
+GET {{host}}/api/stock/low
+x-api-key: {{key}}
+
+### Low stock with your own threshold
+GET {{host}}/api/stock/low?threshold=40
+x-api-key: {{key}}
+
+### Stock movement ledger
+GET {{host}}/api/stock/movements?fruit_id=1&size=LARGE
+x-api-key: {{key}}
+
+# =================== VENDORS ===================
+### Register vendor
+POST {{host}}/api/vendors
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "vendor_name": "Keketso Mahlomola", "phone_number": "+266 5812 3499", "location": "Qacha's Nek Market" }
+
+### All vendors
+GET {{host}}/api/vendors
+x-api-key: {{key}}
+
+### Search by name or phone
+GET {{host}}/api/vendors/search?q=mpho
+x-api-key: {{key}}
+
+###
+GET {{host}}/api/vendors/search?q=5812 3402
+x-api-key: {{key}}
+
+### Update vendor
+PUT {{host}}/api/vendors/1
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "location": "Thetsane Industrial, Maseru" }
+
+### Balances: everyone / only those who owe / one vendor with open sales
+GET {{host}}/api/vendors/balances
+x-api-key: {{key}}
+
+###
+GET {{host}}/api/vendors/balances?owing=true
+x-api-key: {{key}}
+
+###
+GET {{host}}/api/vendors/2/balance
+x-api-key: {{key}}
+
+# =================== PURCHASES ===================
+### Record purchase - multiple items, server totals it and adds stock
+POST {{host}}/api/purchases
+Content-Type: application/json
+x-api-key: {{key}}
+
+{
+  "supplier_id": 2,
+  "items": [
+    { "fruit_id": 3, "packaging_size": "LARGE",  "quantity": 40, "unit_cost": 165.00 },
+    { "fruit_id": 5, "packaging_size": "MEDIUM", "quantity": 25, "unit_cost": 185.00 },
+    { "fruit_id": 1, "packaging_size": "SMALL",  "quantity": 30, "unit_cost": 80.00 }
+  ]
+}
+
+### Purchase from a supplier that does not exist -> 404, nothing saved
+POST {{host}}/api/purchases
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "supplier_id": 999, "items": [ { "fruit_id": 1, "packaging_size": "SMALL", "quantity": 5, "unit_cost": 80 } ] }
+
+### Purchases / one purchase
+GET {{host}}/api/purchases
+x-api-key: {{key}}
+
+###
+GET {{host}}/api/purchases/1
+x-api-key: {{key}}
+
+# =================== SALES ===================
+### Cash sale, paid in full (201)
+POST {{host}}/api/sales
+Content-Type: application/json
+x-api-key: {{key}}
+
+{
+  "vendor_id": 1,
+  "payment_method": "CASH",
+  "items": [
+    { "fruit_id": 1, "packaging_size": "MEDIUM", "quantity": 4 },
+    { "fruit_id": 2, "packaging_size": "LARGE",  "quantity": 3 }
+  ]
+}
+
+### Credit sale -> UNPAID
+POST {{host}}/api/sales
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "vendor_id": 3, "payment_method": "CREDIT", "items": [ { "fruit_id": 4, "packaging_size": "SMALL", "quantity": 5 } ] }
+
+### Mobile money deposit -> PARTIALLY_PAID
+POST {{host}}/api/sales
+Content-Type: application/json
+x-api-key: {{key}}
+
+{
+  "vendor_id": 4,
+  "payment_method": "MOBILE_MONEY",
+  "amount_paid": 300,
+  "payment_reference": "MM-55120044",
+  "items": [ { "fruit_id": 5, "packaging_size": "SMALL", "quantity": 4 } ]
+}
+
+### THE BIG ONE: more large apples requested (60) than exist (50 in the sample data)
+### -> the WHOLE sale is rejected (409), including the valid banana line; stock untouched.
+### Check GET /api/stock before and after: the numbers must be identical.
+POST {{host}}/api/sales
+Content-Type: application/json
+x-api-key: {{key}}
+
+{
+  "vendor_id": 1,
+  "items": [
+    { "fruit_id": 2, "packaging_size": "SMALL", "quantity": 1 },
+    { "fruit_id": 1, "packaging_size": "LARGE", "quantity": 60 }
+  ]
+}
+
+### Unknown vendor -> 404
+POST {{host}}/api/sales
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "vendor_id": 999, "items": [ { "fruit_id": 1, "packaging_size": "SMALL", "quantity": 1 } ] }
+
+### Later payment against a sale (use a sale_id that still has a balance, e.g. 5)
+POST {{host}}/api/sales/5/payments
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "amount": 1000, "method": "CASH" }
+
+### Overpayment -> 400
+POST {{host}}/api/sales/5/payments
+Content-Type: application/json
+x-api-key: {{key}}
+
+{ "amount": 9999999, "method": "CASH" }
+
+### Sales list (filters: vendor_id, status, from, to) / one sale
+GET {{host}}/api/sales?status=UNPAID
+x-api-key: {{key}}
+
+###
+GET {{host}}/api/sales/1
+x-api-key: {{key}}
+
+# =================== REPORTS ===================
+### 1. Five most frequently sold fruits
+GET {{host}}/api/reports/top-fruits
+x-api-key: {{key}}
+
+### 2. Revenue in a date range
+GET {{host}}/api/reports/revenue?from=2026-10-01&to=2026-10-31
+x-api-key: {{key}}
+
+### 3. Vendor with the highest number of boxes
+GET {{host}}/api/reports/top-vendor
+x-api-key: {{key}}
+
+### 4. Current stock per fruit and size
+GET {{host}}/api/reports/stock-levels
+x-api-key: {{key}}
+
+### Bonus: vendors with outstanding balances
+GET {{host}}/api/reports/outstanding-balances
+x-api-key: {{key}}
