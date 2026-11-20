@@ -18,7 +18,12 @@
   .tools input{padding:6px 8px;border-radius:6px;border:1px solid #5b4b3a;background:#3a2d22;color:#fff;width:150px}
   .pill{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600}
   .ok{background:var(--leaf-soft);color:var(--leaf)} .bad{background:#f7dde2;color:var(--berry)}
-  main{max-width:1150px;margin:0 auto;padding:22px;display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+  main{max-width:1150px;margin:0 auto}
+  .page{display:none;padding:22px;gap:20px;grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+  .page.active{display:grid}
+  .main-nav{display:flex;gap:8px;flex-wrap:wrap;width:100%}
+  .nav-link{background:transparent;color:#f6ecd9;border:1px solid #5b4b3a}
+  .nav-link.active{background:var(--mango);border-color:var(--mango);color:var(--soil)}
   section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
   section.wide{grid-column:1/-1}
   h2{margin:0 0 12px;font:700 16px Georgia,serif}
@@ -47,7 +52,7 @@
   .msg{padding:9px 11px;border-radius:8px;font-size:13px;white-space:pre-wrap;display:none}
   .msg.ok{display:block}.msg.bad{display:block}
   ul.lines{margin:0;padding-left:18px;font-size:13px}
-  @media(max-width:600px){main{padding:12px;grid-template-columns:1fr}section.wide{grid-column:auto}.line{grid-template-columns:1fr 1fr}.line button{grid-column:2}}
+  @media(max-width:600px){.page{padding:12px;grid-template-columns:1fr}section.wide{grid-column:auto}.line{grid-template-columns:1fr 1fr}.line button{grid-column:2}}
 </style>
 </head>
 <body>
@@ -57,32 +62,21 @@
     <span id="health" class="pill bad">checking&hellip;</span>
     <input id="apikey" type="password" placeholder="Admin key (if set)">
   </div>
+  <nav class="main-nav" aria-label="Main navigation">
+    <button class="nav-link active" type="button" data-page="overview">Overview</button>
+    <button class="nav-link" type="button" data-page="sales">Sales &amp; Payments</button>
+    <button class="nav-link" type="button" data-page="purchases">Purchases</button>
+    <button class="nav-link" type="button" data-page="suppliers">Suppliers</button>
+    <button class="nav-link" type="button" data-page="fruits">Fruits &amp; Prices</button>
+    <button class="nav-link" type="button" data-page="vendors">Vendors</button>
+  </nav>
 </header>
 
 <main>
+  <div class="page active" id="overviewPage">
   <section class="wide">
     <h2>Stock by packaging size <small style="font-weight:400;color:var(--muted)">&mdash; orange = at or below reorder level</small></h2>
     <div id="stock" class="sizes"></div>
-  </section>
-
-  <section>
-    <h2>Record a sale</h2>
-    <form id="saleForm">
-      <div><label>Vendor</label><select id="vendor"></select></div>
-      <label>Items (price is set by the server from the price list)</label>
-      <div class="line">
-        <select id="fruit"></select>
-        <select id="size"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select>
-        <input id="qty" type="number" min="1" value="1">
-        <button type="button" class="ghost" id="addLine">Add</button>
-      </div>
-      <ul id="lines" class="lines"></ul>
-      <div><label>Payment</label>
-        <select id="method"><option>CASH</option><option>MOBILE_MONEY</option><option>CREDIT</option></select></div>
-      <div><label>Amount paid now (blank = pay in full; ignored for CREDIT)</label><input id="paid" type="text" placeholder="e.g. 500.00"></div>
-      <button type="submit">Record sale</button>
-      <div id="saleMsg" class="msg"></div>
-    </form>
   </section>
 
   <section>
@@ -108,80 +102,6 @@
   </section>
 
   <section class="wide">
-    <h2>Supplier management</h2>
-    <form id="supplierForm" class="form-grid">
-      <div><label for="supplierName">Business name</label><input id="supplierName" required maxlength="120"></div>
-      <div><label for="supplierContact">Contact person</label><input id="supplierContact" required maxlength="100"></div>
-      <div><label for="supplierPhone">Phone</label><input id="supplierPhone" required maxlength="20"></div>
-      <div><label for="supplierProvince">Province</label><select id="supplierProvince" required>
-        <option>Gauteng</option><option>Free State</option><option>KwaZulu-Natal</option><option>Western Cape</option>
-        <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option><option>North West</option>
-      </select></div>
-      <div><label for="supplierAddress">Address</label><input id="supplierAddress" required maxlength="255"></div>
-      <button type="submit">Register supplier</button>
-    </form>
-    <div id="supplierMsg" class="msg"></div>
-    <div class="scroll"><table><thead><tr><th>Business</th><th>Contact</th><th>Phone</th><th>Province</th><th>Address</th><th></th></tr></thead><tbody id="suppliers"></tbody></table></div>
-  </section>
-
-  <section>
-    <h2>Fruit and selling prices</h2>
-    <form id="fruitForm">
-      <div><label for="fruitName">Register fruit</label><input id="fruitName" required maxlength="60" placeholder="Fruit name"></div>
-      <div><label for="fruitDescription">Description</label><input id="fruitDescription" maxlength="255" placeholder="Optional description"></div>
-      <button type="submit">Register fruit</button>
-    </form>
-    <div id="fruitMsg" class="msg"></div>
-    <div class="scroll"><table><thead><tr><th>Fruit</th><th>Description</th><th>Status</th><th></th></tr></thead><tbody id="fruitRows"></tbody></table></div>
-    <form id="priceForm" class="stack" style="margin-top:14px">
-      <div><label for="priceFruit">Fruit</label><select id="priceFruit" required></select></div>
-      <div class="form-grid">
-        <div><label for="priceSize">Packaging size</label><select id="priceSize"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select></div>
-        <div><label for="unitPrice">Selling price (M)</label><input id="unitPrice" type="number" min="0.01" step="0.01" required></div>
-        <button type="submit">Save price</button>
-      </div>
-    </form>
-    <div id="priceMsg" class="msg"></div>
-    <div class="scroll"><table><thead><tr><th>Fruit</th><th>Size</th><th class="n">Price</th></tr></thead><tbody id="prices"></tbody></table></div>
-  </section>
-
-  <section>
-    <h2>Vendor management</h2>
-    <form id="vendorForm">
-      <div><label for="vendorName">Vendor name</label><input id="vendorName" required maxlength="120"></div>
-      <div><label for="vendorPhone">Phone</label><input id="vendorPhone" required maxlength="20"></div>
-      <div><label for="vendorLocation">Location</label><input id="vendorLocation" required maxlength="150"></div>
-      <button type="submit">Register vendor</button>
-    </form>
-    <div id="vendorMsg" class="msg"></div>
-    <form id="vendorSearchForm" class="form-grid" style="margin-top:14px">
-      <div><label for="vendorSearch">Search name or phone</label><input id="vendorSearch" minlength="2"></div>
-      <button type="submit" class="ghost">Search vendors</button>
-    </form>
-    <div class="scroll"><table><thead><tr><th>Name</th><th>Phone</th><th>Location</th><th></th></tr></thead><tbody id="vendorRows"></tbody></table></div>
-  </section>
-
-  <section class="wide">
-    <h2>Record a purchase</h2>
-    <p class="muted">Add multiple fruit and packaging lines. The server calculates the total and increases stock atomically.</p>
-    <form id="purchaseForm">
-      <div><label for="purchaseSupplier">Supplier</label><select id="purchaseSupplier" required></select></div>
-      <div class="line">
-        <select id="purchaseFruit" aria-label="Purchase fruit"></select>
-        <select id="purchaseSize" aria-label="Purchase packaging size"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select>
-        <input id="purchaseQty" type="number" min="1" value="1" aria-label="Purchase quantity">
-        <input id="purchaseCost" type="number" min="0.01" step="0.01" placeholder="Unit cost" aria-label="Purchase unit cost">
-      </div>
-      <button type="button" class="ghost" id="addPurchaseLine">Add item</button>
-      <ul id="purchaseLines" class="lines"></ul>
-      <button type="submit">Record purchase</button>
-      <div id="purchaseMsg" class="msg"></div>
-    </form>
-    <h2 style="margin-top:20px">Recent purchases</h2>
-    <div class="scroll"><table><thead><tr><th>ID</th><th>Supplier</th><th>Date</th><th class="n">Boxes</th><th class="n">Total</th></tr></thead><tbody id="purchases"></tbody></table></div>
-  </section>
-
-  <section class="wide">
     <h2>Required reports</h2>
     <form id="revenueForm" class="form-grid">
       <div><label for="revenueFrom">Revenue from</label><input id="revenueFrom" type="date" required></div>
@@ -192,10 +112,134 @@
     <button id="topVendorButton" type="button" class="ghost" style="margin-top:12px">Show vendor with most boxes</button>
     <div id="topVendorResult" class="msg"></div>
   </section>
+  </div>
+
+  <div class="page" id="salesPage">
+    <section class="wide">
+      <h2>Record a sale</h2>
+      <form id="saleForm">
+        <div><label>Vendor</label><select id="vendor"></select></div>
+        <label>Items (price is set by the server from the price list)</label>
+        <div class="line">
+          <select id="fruit"></select>
+          <select id="size"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select>
+          <input id="qty" type="number" min="1" value="1">
+          <button type="button" class="ghost" id="addLine">Add</button>
+        </div>
+        <ul id="lines" class="lines"></ul>
+        <div><label>Payment</label>
+          <select id="method"><option>CASH</option><option>MOBILE_MONEY</option><option>CREDIT</option></select></div>
+        <div><label>Amount paid now (blank = pay in full; ignored for CREDIT)</label><input id="paid" type="text" placeholder="e.g. 500.00"></div>
+        <button type="submit">Record sale</button>
+        <div id="saleMsg" class="msg"></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="page" id="purchasesPage">
+    <section class="wide">
+      <h2>Record a purchase</h2>
+      <p class="muted">Add multiple fruit and packaging lines. The server calculates the total and increases stock atomically.</p>
+      <form id="purchaseForm">
+        <div><label for="purchaseSupplier">Supplier</label><select id="purchaseSupplier" required></select></div>
+        <div class="line">
+          <select id="purchaseFruit" aria-label="Purchase fruit"></select>
+          <select id="purchaseSize" aria-label="Purchase packaging size"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select>
+          <input id="purchaseQty" type="number" min="1" value="1" aria-label="Purchase quantity">
+          <input id="purchaseCost" type="number" min="0.01" step="0.01" placeholder="Unit cost" aria-label="Purchase unit cost">
+        </div>
+        <button type="button" class="ghost" id="addPurchaseLine">Add item</button>
+        <ul id="purchaseLines" class="lines"></ul>
+        <button type="submit">Record purchase</button>
+        <div id="purchaseMsg" class="msg"></div>
+      </form>
+      <h2 style="margin-top:20px">Recent purchases</h2>
+      <div class="scroll"><table><thead><tr><th>ID</th><th>Supplier</th><th>Date</th><th class="n">Boxes</th><th class="n">Total</th></tr></thead><tbody id="purchases"></tbody></table></div>
+    </section>
+  </div>
+
+  <div class="page" id="suppliersPage">
+    <section class="wide">
+      <h2>Supplier management</h2>
+      <form id="supplierForm" class="form-grid">
+        <div><label for="supplierName">Business name</label><input id="supplierName" required maxlength="120"></div>
+        <div><label for="supplierContact">Contact person</label><input id="supplierContact" required maxlength="100"></div>
+        <div><label for="supplierPhone">Phone</label><input id="supplierPhone" required maxlength="20"></div>
+        <div><label for="supplierProvince">Province</label><select id="supplierProvince" required>
+          <option>Gauteng</option><option>Free State</option><option>KwaZulu-Natal</option><option>Western Cape</option>
+          <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option><option>North West</option>
+        </select></div>
+        <div><label for="supplierAddress">Address</label><input id="supplierAddress" required maxlength="255"></div>
+        <button type="submit">Register supplier</button>
+      </form>
+      <div id="supplierMsg" class="msg"></div>
+      <div class="scroll"><table><thead><tr><th>Business</th><th>Contact</th><th>Phone</th><th>Province</th><th>Address</th><th></th></tr></thead><tbody id="suppliers"></tbody></table></div>
+    </section>
+  </div>
+
+  <div class="page" id="fruitsPage">
+    <section>
+      <h2>Fruit management</h2>
+      <form id="fruitForm">
+        <div><label for="fruitName">Register fruit</label><input id="fruitName" required maxlength="60" placeholder="Fruit name"></div>
+        <div><label for="fruitDescription">Description</label><input id="fruitDescription" maxlength="255" placeholder="Optional description"></div>
+        <button type="submit">Register fruit</button>
+      </form>
+      <div id="fruitMsg" class="msg"></div>
+      <div class="scroll"><table><thead><tr><th>Fruit</th><th>Description</th><th>Status</th><th></th></tr></thead><tbody id="fruitRows"></tbody></table></div>
+    </section>
+    <section>
+      <h2>Selling prices</h2>
+      <form id="priceForm" class="stack">
+        <div><label for="priceFruit">Fruit</label><select id="priceFruit" required></select></div>
+        <div class="form-grid">
+          <div><label for="priceSize">Packaging size</label><select id="priceSize"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select></div>
+          <div><label for="unitPrice">Selling price (M)</label><input id="unitPrice" type="number" min="0.01" step="0.01" required></div>
+          <button type="submit">Save price</button>
+        </div>
+      </form>
+      <div id="priceMsg" class="msg"></div>
+      <div class="scroll"><table><thead><tr><th>Fruit</th><th>Size</th><th class="n">Price</th></tr></thead><tbody id="prices"></tbody></table></div>
+    </section>
+  </div>
+
+  <div class="page" id="vendorsPage">
+    <section class="wide">
+      <h2>Vendor management</h2>
+      <form id="vendorForm">
+        <div><label for="vendorName">Vendor name</label><input id="vendorName" required maxlength="120"></div>
+        <div><label for="vendorPhone">Phone</label><input id="vendorPhone" required maxlength="20"></div>
+        <div><label for="vendorLocation">Location</label><input id="vendorLocation" required maxlength="150"></div>
+        <button type="submit">Register vendor</button>
+      </form>
+      <div id="vendorMsg" class="msg"></div>
+      <form id="vendorSearchForm" class="form-grid" style="margin-top:14px">
+        <div><label for="vendorSearch">Search name or phone</label><input id="vendorSearch" minlength="2"></div>
+        <button type="submit" class="ghost">Search vendors</button>
+      </form>
+      <div class="scroll"><table><thead><tr><th>Name</th><th>Phone</th><th>Location</th><th></th></tr></thead><tbody id="vendorRows"></tbody></table></div>
+    </section>
+  </div>
 </main>
 
 <script>
 const $ = (id) => document.getElementById(id);
+const navLinks = [...document.querySelectorAll('.nav-link')];
+function navigateTo(name, updateHash = false) {
+  const page = $(`${name}Page`);
+  if (!page) return navigateTo('overview', updateHash);
+  document.querySelectorAll('.page').forEach((item) => item.classList.toggle('active', item === page));
+  navLinks.forEach((link) => {
+    const active = link.dataset.page === name;
+    link.classList.toggle('active', active);
+    if (active) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  });
+  if (updateHash && location.hash !== `#${name}`) location.hash = name;
+}
+navLinks.forEach((link) => link.addEventListener('click', () => navigateTo(link.dataset.page, true)));
+window.addEventListener('hashchange', () => navigateTo(location.hash.slice(1) || 'overview'));
+navigateTo(location.hash.slice(1) || 'overview');
 const money = (n) => 'M ' + Number(n).toLocaleString('en', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
 const keyBox = $('apikey'); keyBox.value = localStorage.getItem('adminKey') || '';
