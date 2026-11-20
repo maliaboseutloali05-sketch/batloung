@@ -35,11 +35,19 @@
   form{display:grid;gap:8px} label{font-size:12px;color:var(--muted);font-weight:600}
   select,input[type=number],input[type=text]{padding:7px 8px;border:1px solid var(--line);border-radius:6px;font:inherit;width:100%}
   .line{display:grid;grid-template-columns:1.4fr 1fr .8fr auto;gap:6px}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end}
+  .stack{display:grid;gap:12px}
+  .actions{display:flex;gap:6px;align-items:center}
+  .danger{background:var(--berry)}
+  .muted{color:var(--muted);font-size:13px}
+  .scroll{overflow-x:auto}
+  .scroll table{min-width:520px}
   button{padding:8px 12px;border:0;border-radius:7px;background:var(--leaf);color:#fff;font-weight:600;cursor:pointer}
   button.ghost{background:var(--leaf-soft);color:var(--leaf)}
   .msg{padding:9px 11px;border-radius:8px;font-size:13px;white-space:pre-wrap;display:none}
   .msg.ok{display:block}.msg.bad{display:block}
   ul.lines{margin:0;padding-left:18px;font-size:13px}
+  @media(max-width:600px){main{padding:12px;grid-template-columns:1fr}section.wide{grid-column:auto}.line{grid-template-columns:1fr 1fr}.line button{grid-column:2}}
 </style>
 </head>
 <body>
@@ -81,11 +89,108 @@
     <h2>Who owes us money</h2>
     <table><thead><tr><th>Vendor</th><th class="n">Billed</th><th class="n">Owes</th></tr></thead><tbody id="owing"></tbody></table>
     <p id="owingTotal" style="margin:10px 0 0;font-weight:700"></p>
+    <form id="paymentForm" style="margin-top:14px">
+      <label>Record a payment against an outstanding sale</label>
+      <div class="form-grid">
+        <input id="paymentSaleId" type="number" min="1" required placeholder="Sale ID" aria-label="Sale ID">
+        <input id="paymentAmount" type="number" min="0.01" step="0.01" required placeholder="Amount (M)" aria-label="Payment amount">
+        <select id="paymentMethod"><option>CASH</option><option>MOBILE_MONEY</option></select>
+        <input id="paymentReference" type="text" maxlength="60" placeholder="Reference (optional)" aria-label="Payment reference">
+        <button type="submit">Record payment</button>
+      </div>
+      <div id="paymentMsg" class="msg"></div>
+    </form>
   </section>
 
   <section>
     <h2>Top 5 fruits sold</h2>
     <table><thead><tr><th>Fruit</th><th class="n">Boxes</th><th class="n">Revenue</th></tr></thead><tbody id="top"></tbody></table>
+  </section>
+
+  <section class="wide">
+    <h2>Supplier management</h2>
+    <form id="supplierForm" class="form-grid">
+      <div><label for="supplierName">Business name</label><input id="supplierName" required maxlength="120"></div>
+      <div><label for="supplierContact">Contact person</label><input id="supplierContact" required maxlength="100"></div>
+      <div><label for="supplierPhone">Phone</label><input id="supplierPhone" required maxlength="20"></div>
+      <div><label for="supplierProvince">Province</label><select id="supplierProvince" required>
+        <option>Gauteng</option><option>Free State</option><option>KwaZulu-Natal</option><option>Western Cape</option>
+        <option>Eastern Cape</option><option>Limpopo</option><option>Mpumalanga</option><option>North West</option>
+      </select></div>
+      <div><label for="supplierAddress">Address</label><input id="supplierAddress" required maxlength="255"></div>
+      <button type="submit">Register supplier</button>
+    </form>
+    <div id="supplierMsg" class="msg"></div>
+    <div class="scroll"><table><thead><tr><th>Business</th><th>Contact</th><th>Phone</th><th>Province</th><th>Address</th><th></th></tr></thead><tbody id="suppliers"></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Fruit and selling prices</h2>
+    <form id="fruitForm">
+      <div><label for="fruitName">Register fruit</label><input id="fruitName" required maxlength="60" placeholder="Fruit name"></div>
+      <div><label for="fruitDescription">Description</label><input id="fruitDescription" maxlength="255" placeholder="Optional description"></div>
+      <button type="submit">Register fruit</button>
+    </form>
+    <div id="fruitMsg" class="msg"></div>
+    <div class="scroll"><table><thead><tr><th>Fruit</th><th>Description</th><th>Status</th><th></th></tr></thead><tbody id="fruitRows"></tbody></table></div>
+    <form id="priceForm" class="stack" style="margin-top:14px">
+      <div><label for="priceFruit">Fruit</label><select id="priceFruit" required></select></div>
+      <div class="form-grid">
+        <div><label for="priceSize">Packaging size</label><select id="priceSize"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select></div>
+        <div><label for="unitPrice">Selling price (M)</label><input id="unitPrice" type="number" min="0.01" step="0.01" required></div>
+        <button type="submit">Save price</button>
+      </div>
+    </form>
+    <div id="priceMsg" class="msg"></div>
+    <div class="scroll"><table><thead><tr><th>Fruit</th><th>Size</th><th class="n">Price</th></tr></thead><tbody id="prices"></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>Vendor management</h2>
+    <form id="vendorForm">
+      <div><label for="vendorName">Vendor name</label><input id="vendorName" required maxlength="120"></div>
+      <div><label for="vendorPhone">Phone</label><input id="vendorPhone" required maxlength="20"></div>
+      <div><label for="vendorLocation">Location</label><input id="vendorLocation" required maxlength="150"></div>
+      <button type="submit">Register vendor</button>
+    </form>
+    <div id="vendorMsg" class="msg"></div>
+    <form id="vendorSearchForm" class="form-grid" style="margin-top:14px">
+      <div><label for="vendorSearch">Search name or phone</label><input id="vendorSearch" minlength="2"></div>
+      <button type="submit" class="ghost">Search vendors</button>
+    </form>
+    <div class="scroll"><table><thead><tr><th>Name</th><th>Phone</th><th>Location</th><th></th></tr></thead><tbody id="vendorRows"></tbody></table></div>
+  </section>
+
+  <section class="wide">
+    <h2>Record a purchase</h2>
+    <p class="muted">Add multiple fruit and packaging lines. The server calculates the total and increases stock atomically.</p>
+    <form id="purchaseForm">
+      <div><label for="purchaseSupplier">Supplier</label><select id="purchaseSupplier" required></select></div>
+      <div class="line">
+        <select id="purchaseFruit" aria-label="Purchase fruit"></select>
+        <select id="purchaseSize" aria-label="Purchase packaging size"><option>SMALL</option><option>MEDIUM</option><option>LARGE</option></select>
+        <input id="purchaseQty" type="number" min="1" value="1" aria-label="Purchase quantity">
+        <input id="purchaseCost" type="number" min="0.01" step="0.01" placeholder="Unit cost" aria-label="Purchase unit cost">
+      </div>
+      <button type="button" class="ghost" id="addPurchaseLine">Add item</button>
+      <ul id="purchaseLines" class="lines"></ul>
+      <button type="submit">Record purchase</button>
+      <div id="purchaseMsg" class="msg"></div>
+    </form>
+    <h2 style="margin-top:20px">Recent purchases</h2>
+    <div class="scroll"><table><thead><tr><th>ID</th><th>Supplier</th><th>Date</th><th class="n">Boxes</th><th class="n">Total</th></tr></thead><tbody id="purchases"></tbody></table></div>
+  </section>
+
+  <section class="wide">
+    <h2>Required reports</h2>
+    <form id="revenueForm" class="form-grid">
+      <div><label for="revenueFrom">Revenue from</label><input id="revenueFrom" type="date" required></div>
+      <div><label for="revenueTo">Revenue to</label><input id="revenueTo" type="date" required></div>
+      <button type="submit">Calculate revenue</button>
+    </form>
+    <div id="revenueResult" class="msg"></div>
+    <button id="topVendorButton" type="button" class="ghost" style="margin-top:12px">Show vendor with most boxes</button>
+    <div id="topVendorResult" class="msg"></div>
   </section>
 </main>
 
@@ -99,9 +204,44 @@ keyBox.addEventListener('change', () => { localStorage.setItem('adminKey', keyBo
 async function api(path, options = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (keyBox.value) headers['x-api-key'] = keyBox.value;
-  const res = await fetch(path, { ...options, headers });
-  const json = await res.json().catch(() => ({}));
-  return { status: res.status, json };
+  try {
+    const res = await fetch(path, { ...options, headers });
+    const json = await res.json().catch(() => ({}));
+    return { status: res.status, json };
+  } catch (error) {
+    return { status: 0, json: { error: { message: error.message || 'The server could not be reached' } } };
+  }
+}
+
+function showMessage(id, text, ok) {
+  const msg = $(id);
+  msg.className = 'msg ' + (ok ? 'ok' : 'bad');
+  msg.textContent = text;
+}
+
+function renderTable(tbody, rows, makeCells, emptyText = 'Nothing to show', colspan = 3) {
+  tbody.replaceChildren();
+  if (!rows.length) {
+    const tr = el('tr'); const td = el('td', emptyText); td.colSpan = colspan; tr.append(td); tbody.append(tr);
+    return;
+  }
+  rows.forEach((row) => {
+    const tr = el('tr');
+    makeCells(row).forEach((cell) => tr.append(cell instanceof Node ? cell : el('td', cell == null ? '' : cell)));
+    tbody.append(tr);
+  });
+}
+
+function fillSelect(id, rows, valueKey, labelKey) {
+  const select = $(id);
+  const current = select.value;
+  select.replaceChildren();
+  rows.forEach((row) => {
+    const option = el('option', row[labelKey]);
+    option.value = row[valueKey];
+    select.append(option);
+  });
+  if (rows.some((row) => String(row[valueKey]) === current)) select.value = current;
 }
 
 function renderStock(rows) {
@@ -132,9 +272,9 @@ async function load() {
   $('health').textContent = health.success ? 'database connected' : 'database unreachable';
   $('health').className = 'pill ' + (health.success ? 'ok' : 'bad');
 
-  const [stock, owing, top, vendors, fruits] = await Promise.all([
+  const [stock, owing, top, vendors, fruits, allFruits, suppliers, prices, purchases] = await Promise.all([
     api('/api/stock'), api('/api/vendors/balances?owing=true'), api('/api/reports/top-fruits'),
-    api('/api/vendors'), api('/api/fruits'),
+    api('/api/vendors'), api('/api/fruits'), api('/api/fruits?status=ALL'), api('/api/suppliers'), api('/api/prices'), api('/api/purchases'),
   ]);
   if (stock.status === 401) { $('stock').textContent = 'Enter the admin key (top right) to load data.'; return; }
   if (stock.json.data) renderStock(stock.json.data);
@@ -143,8 +283,114 @@ async function load() {
     $('owingTotal').textContent = 'Total outstanding: ' + money(owing.json.total_outstanding);
   }
   if (top.json.data) fillRows($('top'), top.json.data, (f) => [[f.fruit_name], [f.boxes_sold, 1], [money(f.revenue), 1]]);
-  if (vendors.json.data) { $('vendor').replaceChildren(...vendors.json.data.map((v) => { const o = el('option', v.vendor_name); o.value = v.vendor_id; return o; })); }
-  if (fruits.json.data) { $('fruit').replaceChildren(...fruits.json.data.map((f) => { const o = el('option', f.fruit_name); o.value = f.fruit_id; return o; })); }
+  if (vendors.json.data) {
+    fillSelect('vendor', vendors.json.data, 'vendor_id', 'vendor_name');
+    renderVendors(vendors.json.data);
+  }
+  if (fruits.json.data) {
+    fillSelect('fruit', fruits.json.data, 'fruit_id', 'fruit_name');
+    fillSelect('purchaseFruit', fruits.json.data, 'fruit_id', 'fruit_name');
+    fillSelect('priceFruit', fruits.json.data, 'fruit_id', 'fruit_name');
+  }
+  if (allFruits.json.data) renderFruits(allFruits.json.data);
+  if (suppliers.json.data) {
+    fillSelect('purchaseSupplier', suppliers.json.data, 'supplier_id', 'business_name');
+    renderTable($('suppliers'), suppliers.json.data, (s) => {
+      const actions = el('td');
+      const edit = el('button', 'Edit', 'ghost');
+      edit.type = 'button';
+      edit.addEventListener('click', () => editSupplier(s));
+      const remove = el('button', 'Delete', 'danger');
+      remove.type = 'button';
+      remove.addEventListener('click', () => deleteSupplier(s.supplier_id, s.business_name));
+      actions.className = 'actions';
+      actions.append(edit, remove);
+      return [el('td', s.business_name), el('td', s.contact_person), el('td', s.phone),
+        el('td', s.province), el('td', s.address), actions];
+    }, 'No suppliers registered yet', 6);
+  }
+  if (prices.json.data) renderTable($('prices'), prices.json.data, (p) => [
+    el('td', p.fruit_name), el('td', p.packaging_size), el('td', money(p.unit_price)),
+  ], 'Set prices before recording sales', 3);
+  if (purchases.json.data) renderTable($('purchases'), purchases.json.data, (p) => [
+    el('td', p.purchase_id), el('td', p.supplier_name), el('td', new Date(p.purchase_date).toLocaleDateString()),
+    el('td', p.total_boxes), el('td', money(p.total_amount)),
+  ], 'No purchases recorded yet', 5);
+}
+
+function renderVendors(rows) {
+  renderTable($('vendorRows'), rows, (v) => {
+    const actions = el('td');
+    const edit = el('button', 'Edit', 'ghost'); edit.type = 'button';
+    edit.addEventListener('click', () => editVendor(v));
+    actions.append(edit);
+    return [el('td', v.vendor_name), el('td', v.phone_number), el('td', v.location), actions];
+  }, 'No vendors registered yet', 4);
+}
+
+function renderFruits(rows) {
+  renderTable($('fruitRows'), rows, (f) => {
+    const actions = el('td');
+    const edit = el('button', 'Edit', 'ghost'); edit.type = 'button';
+    edit.addEventListener('click', () => editFruit(f));
+    actions.append(edit);
+    return [el('td', f.fruit_name), el('td', f.description || ''), el('td', f.status), actions];
+  }, 'No fruits registered yet', 4);
+}
+
+async function editSupplier(supplier) {
+  const business_name = prompt('Business name', supplier.business_name);
+  if (business_name === null) return;
+  const contact_person = prompt('Contact person', supplier.contact_person);
+  if (contact_person === null) return;
+  const phone = prompt('Phone number', supplier.phone);
+  if (phone === null) return;
+  const province = prompt('Province (South African province)', supplier.province);
+  if (province === null) return;
+  const address = prompt('Address', supplier.address);
+  if (address === null) return;
+  const result = await api(`/api/suppliers/${supplier.supplier_id}`, {
+    method: 'PUT', body: JSON.stringify({ business_name, contact_person, phone, province, address }),
+  });
+  if (result.status === 200) { showMessage('supplierMsg', result.json.message, true); load(); }
+  else showMessage('supplierMsg', result.json.error?.message || 'Could not update supplier', false);
+}
+
+async function editVendor(vendor) {
+  const vendor_name = prompt('Vendor name', vendor.vendor_name);
+  if (vendor_name === null) return;
+  const phone_number = prompt('Phone number', vendor.phone_number);
+  if (phone_number === null) return;
+  const location = prompt('Location', vendor.location);
+  if (location === null) return;
+  const result = await api(`/api/vendors/${vendor.vendor_id}`, {
+    method: 'PUT', body: JSON.stringify({ vendor_name, phone_number, location }),
+  });
+  if (result.status === 200) { showMessage('vendorMsg', result.json.message, true); load(); }
+  else showMessage('vendorMsg', result.json.error?.message || 'Could not update vendor', false);
+}
+
+async function editFruit(fruit) {
+  const fruit_name = prompt('Fruit name', fruit.fruit_name);
+  if (fruit_name === null) return;
+  const description = prompt('Description', fruit.description || '');
+  if (description === null) return;
+  const status = prompt('Status (ACTIVE or DISCONTINUED)', fruit.status);
+  if (status === null) return;
+  const result = await api(`/api/fruits/${fruit.fruit_id}`, {
+    method: 'PUT', body: JSON.stringify({ fruit_name, description, status }),
+  });
+  if (result.status === 200) { showMessage('fruitMsg', result.json.message, true); load(); }
+  else showMessage('fruitMsg', result.json.error?.message || 'Could not update fruit', false);
+}
+
+async function deleteSupplier(id, name) {
+  if (!confirm(`Delete supplier "${name}"? Suppliers with purchase history cannot be deleted.`)) return;
+  const result = await api(`/api/suppliers/${id}`, { method: 'DELETE' });
+  if (result.status === 200) {
+    showMessage('supplierMsg', result.json.message || 'Supplier deleted', true);
+    load();
+  } else showMessage('supplierMsg', result.json.error?.message || 'Could not delete supplier', false);
 }
 
 const lines = [];
@@ -165,22 +411,162 @@ $('addLine').onclick = () => {
 $('saleForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = $('saleMsg');
+  if (!lines.length) { showMessage('saleMsg', 'Add at least one item before recording a sale.', false); return; }
   const body = { vendor_id: +$('vendor').value, payment_method: $('method').value,
     items: lines.map(({ fruit_id, packaging_size, quantity }) => ({ fruit_id, packaging_size, quantity })) };
   if ($('paid').value.trim() && body.payment_method !== 'CREDIT') body.amount_paid = $('paid').value.trim();
   const { status, json } = await api('/api/sales', { method: 'POST', body: JSON.stringify(body) });
   if (status === 201) {
-    msg.className = 'msg ok';
-    msg.textContent = `Sale #${json.data.sale_id} saved - total ${money(json.data.total_amount)}, ${json.data.payment_status}, balance ${money(json.data.balance_due)}`;
+    showMessage('saleMsg', `Sale #${json.data.sale_id} saved - total ${money(json.data.total_amount)}, ${json.data.payment_status}, balance ${money(json.data.balance_due)}`, true);
     lines.length = 0; drawLines(); load();
   } else {
-    msg.className = 'msg bad';
     const detail = (json.error && json.error.details && json.error.details.shortages)
       ? '\n' + json.error.details.shortages.map((s) => `- ${s.fruit_name} ${s.packaging_size}: asked ${s.requested}, only ${s.available} in stock`).join('\n') : '';
-    msg.textContent = `HTTP ${status}: ${(json.error && json.error.message) || 'Request failed'}${detail}`;
+    showMessage('saleMsg', `HTTP ${status}: ${(json.error && json.error.message) || 'Request failed'}${detail}`, false);
   }
 });
 
+const purchaseLines = [];
+function drawPurchaseLines() {
+  $('purchaseLines').replaceChildren(...purchaseLines.map((line, i) => {
+    const li = el('li', `${line.quantity} x ${line.fruitName} (${line.packaging_size}) at ${money(line.unit_cost)} each `);
+    const remove = el('a', 'remove'); remove.href = '#';
+    remove.onclick = (event) => { event.preventDefault(); purchaseLines.splice(i, 1); drawPurchaseLines(); };
+    li.append(remove);
+    return li;
+  }));
+}
+
+$('supplierForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const body = {
+    business_name: $('supplierName').value.trim(),
+    contact_person: $('supplierContact').value.trim(),
+    phone: $('supplierPhone').value.trim(),
+    province: $('supplierProvince').value,
+    address: $('supplierAddress').value.trim(),
+  };
+  const result = await api('/api/suppliers', { method: 'POST', body: JSON.stringify(body) });
+  if (result.status === 201) {
+    showMessage('supplierMsg', result.json.message, true);
+    event.target.reset(); load();
+  } else showMessage('supplierMsg', result.json.error?.message || 'Could not register supplier', false);
+});
+
+$('fruitForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const body = { fruit_name: $('fruitName').value.trim(), description: $('fruitDescription').value.trim() };
+  const result = await api('/api/fruits', { method: 'POST', body: JSON.stringify(body) });
+  if (result.status === 201) {
+    showMessage('fruitMsg', result.json.message, true);
+    event.target.reset(); load();
+  } else showMessage('fruitMsg', result.json.error?.message || 'Could not register fruit', false);
+});
+
+$('priceForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const body = { fruit_id: Number($('priceFruit').value), packaging_size: $('priceSize').value, unit_price: $('unitPrice').value };
+  const result = await api('/api/prices', { method: 'PUT', body: JSON.stringify(body) });
+  if (result.status === 200) {
+    showMessage('priceMsg', result.json.message, true);
+    $('unitPrice').value = ''; load();
+  } else showMessage('priceMsg', result.json.error?.message || 'Could not save selling price', false);
+});
+
+$('vendorForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const body = {
+    vendor_name: $('vendorName').value.trim(),
+    phone_number: $('vendorPhone').value.trim(),
+    location: $('vendorLocation').value.trim(),
+  };
+  const result = await api('/api/vendors', { method: 'POST', body: JSON.stringify(body) });
+  if (result.status === 201) {
+    showMessage('vendorMsg', result.json.message, true);
+    event.target.reset(); load();
+  } else showMessage('vendorMsg', result.json.error?.message || 'Could not register vendor', false);
+});
+
+$('vendorSearchForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const term = $('vendorSearch').value.trim();
+  const result = await api(`/api/vendors/search?q=${encodeURIComponent(term)}`);
+  if (result.status === 200) {
+    renderVendors(result.json.data);
+  } else showMessage('vendorMsg', result.json.error?.message || 'Could not search vendors', false);
+});
+
+$('paymentForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const saleId = Number($('paymentSaleId').value);
+  const body = {
+    amount: $('paymentAmount').value,
+    method: $('paymentMethod').value,
+    reference: $('paymentReference').value.trim() || undefined,
+  };
+  const result = await api(`/api/sales/${saleId}/payments`, { method: 'POST', body: JSON.stringify(body) });
+  if (result.status === 201) {
+    showMessage('paymentMsg', result.json.message, true);
+    $('paymentAmount').value = ''; $('paymentReference').value = ''; load();
+  } else showMessage('paymentMsg', result.json.error?.message || 'Could not record payment', false);
+});
+
+$('addPurchaseLine').onclick = () => {
+  const quantity = Number($('purchaseQty').value);
+  const unitCost = Number($('purchaseCost').value);
+  if (!Number.isInteger(quantity) || quantity < 1 || !Number.isFinite(unitCost) || unitCost <= 0 || !$('purchaseFruit').value) {
+    showMessage('purchaseMsg', 'Choose a fruit and enter a positive whole quantity and unit cost.', false);
+    return;
+  }
+  purchaseLines.push({
+    fruit_id: Number($('purchaseFruit').value),
+    fruitName: $('purchaseFruit').selectedOptions[0].textContent,
+    packaging_size: $('purchaseSize').value,
+    quantity,
+    unit_cost: unitCost,
+  });
+  showMessage('purchaseMsg', '', true);
+  drawPurchaseLines();
+};
+
+$('purchaseForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!purchaseLines.length) { showMessage('purchaseMsg', 'Add at least one item before recording a purchase.', false); return; }
+  const body = {
+    supplier_id: Number($('purchaseSupplier').value),
+    items: purchaseLines.map(({ fruit_id, packaging_size, quantity, unit_cost }) => ({ fruit_id, packaging_size, quantity, unit_cost })),
+  };
+  const result = await api('/api/purchases', { method: 'POST', body: JSON.stringify(body) });
+  if (result.status === 201) {
+    showMessage('purchaseMsg', `Purchase #${result.json.data.purchase_id} recorded. Total ${money(result.json.data.total_amount)}; stock increased.`, true);
+    purchaseLines.length = 0; drawPurchaseLines(); load();
+  } else showMessage('purchaseMsg', result.json.error?.message || 'Could not record purchase', false);
+});
+
+$('revenueForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const from = $('revenueFrom').value;
+  const to = $('revenueTo').value;
+  const result = await api(`/api/reports/revenue?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+  if (result.status === 200) {
+    const report = result.json.data;
+    showMessage('revenueResult',
+      `${report.number_of_sales} sales | Billed ${money(report.revenue_billed)} | Collected ${money(report.revenue_collected)} | Still owed ${money(report.still_owed)}`, true);
+  } else showMessage('revenueResult', result.json.error?.message || 'Could not calculate revenue', false);
+});
+
+$('topVendorButton').addEventListener('click', async () => {
+  const result = await api('/api/reports/top-vendor');
+  if (result.status === 200) {
+    const names = result.json.data.map((v) => `${v.vendor_name} (${v.total_boxes} boxes)`).join(', ');
+    showMessage('topVendorResult', names || 'No sales have been recorded yet.', true);
+  } else showMessage('topVendorResult', result.json.error?.message || 'Could not load the report', false);
+});
+
+const today = new Date();
+const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+$('revenueTo').value = localDate;
+$('revenueFrom').value = `${localDate.slice(0, 7)}-01`;
 load();
 </script>
 </body>
